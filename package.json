@@ -10,8 +10,8 @@
   ],
   "scripts": {
     "build": "rollup -c rollup.config.js",
-    "release": "npm run build && xyz --repo git@github.com:sourcecred/payouts.git --tag 'vX.Y.Z' --increment",
-    "release:alpha": "npm run build && xyz --repo git@github.com:sourcecred/payouts.git --tag 'vX.Y.Z' --publish-command 'npm publish --tag=alpha' --prerelease-label alpha --increment"
+    "release": "npm run build && xyz --repo git@github.com:teamopen-dev/sourcecred-stack-lookup.git --tag 'vX.Y.Z' --increment",
+    "release:alpha": "npm run build && xyz --repo git@github.com:teamopen-dev/sourcecred-stack-lookup.git --tag 'vX.Y.Z' --publish-command 'npm publish --tag=alpha' --prerelease-label alpha --increment"
   },
   "devDependencies": {
     "axios": "^0.19.0",
