@@ -1,0 +1,15 @@
+{
+  "name": "@sourcecred/widgets",
+  "dependencies": {
+    "esm": "^3.2.25",
+    "got": "^9.6.0",
+    "keyv-fs-sync": "^0.1.0",
+    "mkdirp": "^0.5.1",
+    "sharp": "^0.23.0"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "rimraf": "^3.0.0"
+  }
+}

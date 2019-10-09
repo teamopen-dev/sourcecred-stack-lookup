@@ -1,0 +1,12 @@
+{
+  "name": "@sourcecred/payouts",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "rollup": "^1.23.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "xyz": "^3.0.0"
+  }
+}

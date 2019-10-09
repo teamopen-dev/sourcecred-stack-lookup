@@ -1,0 +1,13 @@
+{
+  "name": "keyv-fs-sync",
+  "devDependencies": {
+    "@keyv/test-suite": "^1.6.11",
+    "ava": "^2.4.0",
+    "keyv": "^3.1.0",
+    "memory-fs": "^0.4.1",
+    "xyz": "^3.0.0"
+  },
+  "dependencies": {
+    "rimraf": "^3.0.0"
+  }
+}

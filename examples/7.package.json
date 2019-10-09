@@ -1,0 +1,13 @@
+{
+  "name": "7",
+  "dependencies": {
+    "jsonwebtoken": "^8.3.0",
+    "tiny-lru": "^1.6.1"
+  },
+  "peerDependencies": {
+    "fluture": "^10.0.0",
+    "fluture-hooks": "^0.2.3",
+    "booture": "^0.1.1",
+    "tcomb": "^3.2.0"
+  }
+}
