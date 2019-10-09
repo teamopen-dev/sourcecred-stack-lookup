@@ -1,12 +1,14 @@
 'use strict';
 
 const {knuthShuffle} = require('knuth-shuffle');
-const {sync: rimrafSync} = require('rimraf');
 const {sync: mkdirpSync} = require('mkdirp');
 const {tmpdir} = require('os');
 const {existsSync, writeFileSync, mkdtempSync, createWriteStream, statSync} = require('fs');
 const {join: pathJoin, resolve} = require('path');
 const {spawnSync, spawn} = require('child_process');
+
+const {getDirectDepsFrom} = require('./directDeps');
+const {resolveByNpmInstall} = require('./ghResolver');
 
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
@@ -18,180 +20,123 @@ const verbose = !!process.env.VERBOSE || false;
 const SOURCECRED_GITHUB_TOKEN = process.env.SOURCECRED_GITHUB_TOKEN;
 const cliPath = process.env.SOURCECRED_CLI;
 
-// User ID
-const idu = spawnSync('id', ['-u']);
-if(idu.status > 0) {
-	console.warn(idu.stderr.toString());
-	throw new Error('Failed to get user ID');
-}
-const uid = new Number(idu.stdout.toString());
+const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
-// Locate the supplied package.json
-const relPath = process.argv[2];
-const absPath = resolve(process.cwd(), relPath);
+// Our "main" function?
+// Just want async/await in a scripting context :D
+(async () => {
 
-if(!existsSync(absPath)) {
-	throw new Error(`Can't find file: ${absPath}`);
-}
+	// Locate the supplied package.json
+	const relPath = process.argv[2];
+	const {deps, rootPkg} = await getDirectDepsFrom(relPath);
+	if(verbose) console.log('Dependencies:', deps);
 
-if(!absPath.endsWith('package.json')) {
-	throw new Error(`You should provide a package.json, got: ${absPath}`);
-}
+	// Switch from tmp dir to local data.
+	const scDir = resolve(process.cwd(), '.sourcecred');
+	const scoresDir = resolve(process.cwd(), '.scores');
+	mkdirpSync(scDir);
+	mkdirpSync(scoresDir);
 
-// Read the supplied package json.
-const rootPkg = require(absPath);
-const deps = new Set([
-	...(Object.keys(rootPkg.dependencies || {})),
-	...(Object.keys(rootPkg.devDependencies || {}))
-]);
-if(verbose) {
-	console.log('Dependencies:', deps);
-}
+	// Find out which we need to reload.
+	const oldEnough = new Date(Date.now() - (2 * oneDay));
+	const reloadSetNpm =
+		Array.from(deps.values())
+		.filter(npmName => {
+			try {
+				const scoresFor = pathJoin(scoresDir, `${hexOf(npmName)}.json`);
+				const stat = statSync(scoresFor);
+				return stat.size === 0 || stat.mtime <= oldEnough;
+			} catch (e) {
+				return true;
+			}
+		});
 
-// Install in a tmp dir.
-console.log('Fetching dependency data from NPM');
-const installSite = mkdtempSync(pathJoin(tmpdir(), 'stack-lookup-'));
-writeFileSync(pathJoin(installSite, 'package.json'), JSON.stringify(rootPkg, null, 2));
-const npmRes = spawnSync('npm', ['i', '-f', '--ignore-scripts'], {
-	cwd: installSite,
-	timeout: oneMinute
-});
+	console.log('Refs that need reloading:', reloadSetNpm.length);
+	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / reloadSetNpm.length);
+	console.log('Timeout per load:', perLoad);
 
-if(npmRes.status > 0) {
-	console.warn(npmRes.stderr.toString());
-	throw new Error('Failed NPM install');
-} else {
-	if(verbose) {
-		console.log('NPM:', npmRes.stdout.toString());
-		console.warn('NPM WARN:', npmRes.stderr.toString());
-	}
-}
+	// Install in a tmp dir.
+	console.log('Fetching dependency data from NPM');
+	const depMap = await resolveByNpmInstall(deps, rootPkg, {verbose});
+	if(verbose) console.log(depMap);
 
-const ghPattern = new RegExp(/github\.com\/[^\/]+\/[^\/#\?"']+/gi);
-const stripGh = str => str.startsWith('github.com/') ? str.slice('github.com/'.length) : str;
-const stripGit = str => str.endsWith('.git') ? str.slice(0, '.git'.length * -1) : str;
+	let spawnQueue = Array.from(knuthShuffle([...reloadSetNpm]));
+	let killTimeout;
+	let childToKill = null;
 
-const depMap = new Map();
-for (const dep of deps) {
-	const {bugs, homepage, repository, ...depPkg} = require(pathJoin(installSite, 'node_modules', dep, 'package.json'));
-	const suspects = JSON.stringify({bugs, homepage, repository});
-
-	const hits = [...suspects.matchAll(ghPattern)].map(m => m[0]);
-	const uniqueHits = new Set(hits.map(stripGh).map(stripGit));
-	const refs = Array.from(uniqueHits.values());
-
-	if(refs.length === 0) {
-		console.warn(`No match for package: ${dep}`);
-	}
-	if(refs.length > 1) {
-		console.warn(`Ambiquous matches for package: ${dep}`, refs);
-	}
-	if(refs.length === 1) {
-		depMap.set(refs[0], dep);
-	}
-}
-
-console.log(depMap);
-
-// Switch from tmp dir to local data.
-rimrafSync(installSite);
-const scDir = resolve(process.cwd(), '.sourcecred');
-const scoresDir = resolve(process.cwd(), '.scores');
-mkdirpSync(scDir);
-mkdirpSync(scoresDir);
-
-const hexDepOf = ref => Buffer.from(depMap.get(ref), 'utf8').toString('hex');
-
-// See which files are old enough to warrant reloading.
-const oldEnough = new Date(Date.now() - (2 * oneDay));
-const reloadSet =
-	Array.from(depMap.keys())
-	.filter(rl => {
-		try {
-			const scoresFor = pathJoin(scoresDir, `${hexDepOf(rl)}.json`);
-			const stat = statSync(scoresFor);
-			return stat.size === 0 || stat.mtime <= oldEnough;
-		} catch (e) {
-			return true;
+	const clearKillTimeout = () => {
+		if(killTimeout) {
+			clearTimeout(killTimeout);
 		}
-	});
-
-knuthShuffle(reloadSet);
-console.log('Refs that need reloading:', reloadSet.length);
-const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / reloadSet.length);
-console.log('Timeout per load:', perLoad);
-
-const spawnQueue = Array.from(reloadSet);
-let killTimeout;
-let childToKill = null;
-
-const clearKillTimeout = () => {
-	if(killTimeout) {
-		clearTimeout(killTimeout);
 	}
-}
-const setKillTimeout = () => {
-	clearKillTimeout();
-	killTimeout = setTimeout(() => {
-		childToKill.kill('SIGINT');
-		childToKill = null;
-	}, perLoad);
-};
-
-process.on('SIGINT', () => {
-	clearKillTimeout();
-	if(childToKill) {
-		console.log('Received SIGINT. Forwarding this to our child process.');
-		spawnQueue = [];
-		childToKill.kill('SIGINT');
-	} else {
-		process.exit();
-	}
-});
-
-const scoreNext = (ref) => {
-	const dep = depMap.get(ref);
-	const output = createWriteStream(pathJoin(scoresDir, `${hexDepOf(ref)}.json`));
-	// const scoreSourceCred = spawn('docker', ['run', '--rm', '-i', '-v', `${scDir}:/data`, 'sourcecred/sourcecred:dev', 'scores', ref]);
-	const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
-	childToKill = scoreSourceCred;
-	scoreSourceCred.stdout.pipe(output);
-	scoreSourceCred.stderr.pipe(process.stderr);
-	scoreSourceCred.on('close', (code) => {
-		childToKill = null;
-		output.end();
-		console.log(`child process exited with code ${code}`);
-		loadNext();
-	});
-};
-
-let failedLoad = 0;
-const loadNext = () => {
-	const ref = spawnQueue.pop();
-	if(ref === undefined) {
-		if(failedLoad > 0) {
-			console.warn('One of the deps failed to load');
-		}
-		return;
-	}
-
-	// const loadSourceCred = spawn('docker', ['run', '--rm', '-i', '-u', uid, '-v', `${scDir}:/data`, '-e', `SOURCECRED_GITHUB_TOKEN=${SOURCECRED_GITHUB_TOKEN}`, 'sourcecred/sourcecred:dev', 'load', ref]);
-	const loadSourceCred = spawn(nodePath, [cliPath, 'load', ref], {timeout: perLoad, env: {SOURCECRED_GITHUB_TOKEN, SOURCECRED_DIRECTORY: scDir}});
-	childToKill = loadSourceCred;
-	setKillTimeout();
-	loadSourceCred.stdout.pipe(process.stdout);
-	loadSourceCred.stderr.pipe(process.stderr);
-	loadSourceCred.on('close', (code) => {
+	const setKillTimeout = () => {
 		clearKillTimeout();
-		childToKill = null;
-		console.log(`child process exited with code ${code}`);
-		failedLoad = Math.max(failedLoad, code);
-		if(code === 0) {
-			scoreNext(ref);
+		killTimeout = setTimeout(() => {
+			childToKill.kill('SIGINT');
+			childToKill = null;
+		}, perLoad);
+	};
+
+	process.on('SIGINT', () => {
+		clearKillTimeout();
+		if(childToKill) {
+			console.log('Received SIGINT. Forwarding this to our child process.');
+			spawnQueue = [];
+			childToKill.kill('SIGINT');
 		} else {
-			loadNext();
+			process.exit();
 		}
 	});
-};
 
-loadNext();
+	const scoreNext = (dep, ref) => {
+		const output = createWriteStream(pathJoin(scoresDir, `${hexOf(dep)}.json`));
+		const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
+		childToKill = scoreSourceCred;
+		scoreSourceCred.stdout.pipe(output);
+		scoreSourceCred.stderr.pipe(process.stderr);
+		scoreSourceCred.on('close', (code) => {
+			childToKill = null;
+			output.end();
+			console.log(`child process exited with code ${code}`);
+			loadNext();
+		});
+	};
+
+	let failedLoad = 0;
+	const loadNext = () => {
+		const dep = spawnQueue.pop();
+		if(dep === undefined) {
+			if(failedLoad > 0) {
+				console.warn('One of the deps failed to load');
+			}
+			return;
+		}
+
+		const ref = depMap.get(dep);
+		if(ref === null) {
+			console.warn('No known GitHub project for package:', dep);
+			loadNext();
+			return;
+		}
+
+		const loadSourceCred = spawn(nodePath, [cliPath, 'load', ref], {timeout: perLoad, env: {SOURCECRED_GITHUB_TOKEN, SOURCECRED_DIRECTORY: scDir}});
+		childToKill = loadSourceCred;
+		setKillTimeout();
+		loadSourceCred.stdout.pipe(process.stdout);
+		loadSourceCred.stderr.pipe(process.stderr);
+		loadSourceCred.on('close', (code) => {
+			clearKillTimeout();
+			childToKill = null;
+			console.log(`child process exited with code ${code}`);
+			failedLoad = Math.max(failedLoad, code);
+			if(code === 0) {
+				scoreNext(dep, ref);
+			} else {
+				loadNext();
+			}
+		});
+	};
+
+	loadNext();
+
+})();
