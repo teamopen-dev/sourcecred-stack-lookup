@@ -23,8 +23,8 @@ const cliPath = process.env.SOURCECRED_CLI;
 (async () => {
 
 	// Locate the supplied package.json
-	const relPath = process.argv[2];
-	const {deps, rootPkg} = await getDirectDepsFrom(relPath);
+	const relPath = process.argv.slice(2);
+	const {deps} = await getDirectDepsFrom(relPath);
 	if(verbose) console.log('Dependencies:', deps);
 
 	// Switch from tmp dir to local data.
