@@ -39,7 +39,7 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 	mkdirpSync(scoresDir);
 
 	// Get our metadata.
-	const meta = await createMetaFileHandle(scoresDir, {verbose: true});
+	const meta = await createMetaFileHandle(scoresDir, {verbose});
 
 	// Find out which we need to reload.
 	const reloadSetNpm =

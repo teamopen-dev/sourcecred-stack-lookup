@@ -35,7 +35,7 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
 	const hasAge = (dep, age) => {
 		const targetDate = new Date(Date.now() - age);
 		const foundDate = meta[dep] || null;
-		if(verbose) console.log('Comparing', dep, !foundDate, foundDate <= targetDate);
+		if(verbose) console.log('Comparing for age', dep, !foundDate, foundDate <= targetDate);
 		return !foundDate || foundDate <= targetDate;
 	};
 
