@@ -45,6 +45,10 @@ steps:
       mount:
         - './.sourcecred'
         - './.scores'
+    when:
+      status:
+        - success
+        - failure
 
   # - name: commit-and-push
   #   image: docker:git
