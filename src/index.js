@@ -125,10 +125,13 @@ let spawnQueue = Array.from(reloadSet);
 let killTimeout;
 let childToKill = null;
 
-const setKillTimeout = () => {
+const clearKillTimeout = () => {
 	if(killTimeout) {
 		clearTimeout(killTimeout);
 	}
+}
+const setKillTimeout = () => {
+	clearKillTimeout();
 	killTimeout = setTimeout(() => {
 		childToKill.kill('SIGINT');
 		childToKill = null;
@@ -136,15 +139,13 @@ const setKillTimeout = () => {
 };
 
 process.on('SIGINT', () => {
+	clearKillTimeout();
 	if(childToKill) {
 		console.log('Received SIGINT. Forwarding this to our child process.');
 		spawnQueue = [];
 		childToKill.kill('SIGINT');
 	} else {
 		process.exit();
-	}
-	if(killTimeout) {
-		clearTimeout(killTimeout);
 	}
 });
 
@@ -183,6 +184,7 @@ const loadNext = () => {
 	loadSourceCred.stdout.pipe(process.stdout);
 	loadSourceCred.stderr.pipe(process.stderr);
 	loadSourceCred.on('close', (code) => {
+		clearKillTimeout();
 		childToKill = null;
 		console.log(`child process exited with code ${code}`);
 		failedLoad = Math.max(failedLoad, code);
