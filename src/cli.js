@@ -11,7 +11,7 @@ const {startLoadingScores} = require('./scoreLoader');
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
 
-const targetLoadTimeMins = new Number(process.env.TARGET_LOAD_TIME_MINS || 40);
+const targetLoadTimeMins = new Number(process.env.TARGET_LOAD_TIME_MINS || 10);
 const nodePath = process.argv[0];
 
 const verbose = !!process.env.VERBOSE || false;
@@ -54,10 +54,7 @@ const cliPath = process.env.SOURCECRED_CLI;
 
 	// It's madness to have < 60s to load. So limit our selection accordingly.
 	const clampedReloadSet = reloadSet.slice(0, targetLoadTimeMins);
+	console.log('Queue size:', reloadSet.length);
 
-	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / clampedReloadSet.length);
-	console.log('Queue size:', clampedReloadSet.length, '/', reloadSet.length);
-	console.log('Timeout per load (s):', perLoad/1000);
-
-	startLoadingScores({reloadSet: clampedReloadSet, scoresDir, scDir, depMap, nodePath, cliPath, perLoad, meta, SOURCECRED_GITHUB_TOKEN});
+	startLoadingScores({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, meta, targetLoadTimeMins, SOURCECRED_GITHUB_TOKEN});
 })();

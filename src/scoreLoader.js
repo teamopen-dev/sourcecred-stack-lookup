@@ -8,7 +8,10 @@ const {join: pathJoin} = require('path');
 const oneMinute = 60000;
 const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
-exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, perLoad, meta, SOURCECRED_GITHUB_TOKEN}) => {
+const maxPerLoad = 10*oneMinute;
+
+exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, targetLoadTimeMins, meta, SOURCECRED_GITHUB_TOKEN}) => {
+  const doneWhen = targetLoadTimeMins * oneMinute + Date.now();
 	let spawnQueue = Array.from(knuthShuffle([...reloadSet]));
 	let killTimeout;
 	let childToKill = null;
@@ -24,7 +27,7 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 		killTimeout = setTimeout(() => {
 			childToKill.kill('SIGINT');
 			childToKill = null;
-		}, perLoad);
+		}, maxPerLoad);
 	};
 
 	process.on('SIGINT', () => {
@@ -55,6 +58,11 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 
 	let failedLoad = 0;
 	const loadNext = () => {
+    if(doneWhen <= Date.now()) {
+      console.warn('Out of time, returning');
+      return;
+    }
+
 		const ref = spawnQueue.pop();
 		if(ref === undefined) {
 			if(failedLoad > 0) {
@@ -63,7 +71,7 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 			return;
 		}
 
-		const loadSourceCred = spawn(nodePath, [cliPath, 'load', ref], {timeout: perLoad, env: {SOURCECRED_GITHUB_TOKEN, SOURCECRED_DIRECTORY: scDir}});
+		const loadSourceCred = spawn(nodePath, [cliPath, 'load', ref], {timeout: maxPerLoad, env: {SOURCECRED_GITHUB_TOKEN, SOURCECRED_DIRECTORY: scDir}});
 		childToKill = loadSourceCred;
 		setKillTimeout();
 		loadSourceCred.stdout.pipe(process.stdout);
