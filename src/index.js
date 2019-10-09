@@ -39,30 +39,24 @@ const cliPath = process.env.SOURCECRED_CLI;
 	// Find out which we need to reload.
 	const reloadSetNpm =
 		Array.from(deps.values())
-		.filter(npmName => meta.hasAge(npmName, 2 * oneDay));
+		.filter(npmName => meta.packageHasAge(npmName, 2 * oneDay));
 
-	console.log('Refs that need reloading:', reloadSetNpm.length);
+	console.log('Packages that need reloading:', reloadSetNpm.length);
 
 	// Install in a tmp dir.
 	console.log('Fetching dependency data from NPM');
 	const depMap = await resolveByJsDelivr(reloadSetNpm);
 	if(verbose) console.log(depMap);
+	meta.storePackageRefs(depMap);
 
-	// Filter by resolved.
-	const resolvedReloadSet = reloadSetNpm.filter(p => {
-		const ref = depMap.get(p);
-		if(!ref) {
-			console.warn('No known GitHub project for package:', p);
-			return false;
-		}
-		return true;
-	});
+	// Map dependencies to refs.
+	const reloadSet = meta.packagesToRefs(reloadSetNpm);
 
 	// It's madness to have < 60s to load. So limit our selection accordingly.
-	const clampedReloadSet = resolvedReloadSet.slice(0, targetLoadTimeMins);
+	const clampedReloadSet = reloadSet.slice(0, targetLoadTimeMins);
 
 	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / clampedReloadSet.length);
-	console.log('Queue size:', clampedReloadSet.length, '/', resolvedReloadSet.length);
+	console.log('Queue size:', clampedReloadSet.length, '/', reloadSet.length);
 	console.log('Timeout per load (s):', perLoad/1000);
 
 	startLoadingScores({reloadSet: clampedReloadSet, scoresDir, scDir, depMap, nodePath, cliPath, perLoad, meta, SOURCECRED_GITHUB_TOKEN});

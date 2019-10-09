@@ -38,8 +38,8 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 		}
 	});
 
-	const scoreNext = (dep, ref) => {
-		const output = createWriteStream(pathJoin(scoresDir, `${hexOf(dep)}.json`));
+	const scoreNext = (ref) => {
+		const output = createWriteStream(pathJoin(scoresDir, `${hexOf(ref)}.json`));
 		const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
 		childToKill = scoreSourceCred;
 		scoreSourceCred.stdout.pipe(output);
@@ -47,7 +47,7 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 		scoreSourceCred.on('close', (code) => {
 			childToKill = null;
 			output.end();
-			meta.bumpScore(dep);
+			meta.bumpScore(ref);
 			console.log(`child process exited with code ${code}`);
 			loadNext();
 		});
@@ -55,18 +55,11 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 
 	let failedLoad = 0;
 	const loadNext = () => {
-		const dep = spawnQueue.pop();
-		if(dep === undefined) {
+		const ref = spawnQueue.pop();
+		if(ref === undefined) {
 			if(failedLoad > 0) {
 				console.warn('One of the deps failed to load');
 			}
-			return;
-		}
-
-		const ref = depMap.get(dep);
-		if(!ref) {
-			console.warn('No known GitHub project for package:', dep);
-			loadNext();
 			return;
 		}
 
@@ -81,7 +74,7 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 			console.log(`child process exited with code ${code}`);
 			failedLoad = Math.max(failedLoad, code);
 			if(code === 0) {
-				scoreNext(dep, ref);
+				scoreNext(ref);
 			} else {
 				loadNext();
 			}
