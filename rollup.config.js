@@ -6,7 +6,6 @@ import json from "rollup-plugin-json";
 
 export default {
   input: "src/client.js",
-  external: ['axios'],
   output: {
     format: "umd",
     name: "TeamOpenSourcecredStackLookup",

@@ -5,15 +5,14 @@ const TIMEOUT = 10000;
 
 const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
-const axiosReq = (...args) => {
-	const request = require('axios');
-	return request.apply(null, args).then(res => res.data);
+const axiosReq = axios => (...args) => {
+	return axios.apply(null, args).then(res => res.data);
 };
 
-exports.createRemoteClient = (opts) => {
-	const {asyncRequest, apiURL} = opts || {};
+exports.createRemoteClient = (axios, opts) => {
+	const {apiURL} = opts || {};
 	const baseURL = API_URL || apiURL;
-	const request = asyncRequest || axiosReq;
+	const request = axiosReq(axios);
 
 	const getMeta = () => request({
 		baseURL,
