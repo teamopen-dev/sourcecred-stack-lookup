@@ -2,3 +2,4 @@
 .scores
 .sourcecred
 node_modules
+/index.js
