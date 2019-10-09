@@ -113,7 +113,7 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 		}
 
 		const ref = depMap.get(dep);
-		if(ref === null) {
+		if(!ref) {
 			console.warn('No known GitHub project for package:', dep);
 			loadNext();
 			return;
