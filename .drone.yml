@@ -51,24 +51,28 @@ steps:
         - success
         - failure
 
-  # - name: commit-and-push
-  #   image: docker:git
-  #   environment:
-  #     SSH_DEPLOY_KEY:
-  #       from_secret: SSH_DEPLOY_KEY
-  #   commands:
-  #     # Switch to the secret deploy key.
-  #     - mkdir -p ~/.ssh
-  #     - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-  #     - echo "$SSH_DEPLOY_KEY" > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
-  #     - cd site
-  #     - git init
-  #     - git config user.email "deploy-bot@teamopen.dev"
-  #     - git config user.name "Deployment Bot"
-  #     - git checkout -b gh-pages
-  #     - git add --all
-  #     - git commit -m "Publishing to gh-pages `date`"
-  #     - git push -f git@github.com:teamopen-dev/shared-sourcecred.git gh-pages
+  - name: commit-and-push
+    image: docker:git
+    environment:
+      CNAME: 'scsl.teamopen.dev'
+      SSH_DEPLOY_KEY:
+        from_secret: SSH_DEPLOY_KEY
+    commands:
+      # Switch to the secret deploy key.
+      - mkdir -p ~/.ssh
+      - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - echo "$SSH_DEPLOY_KEY" > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
+      - mkdir -p site/v0
+      - cd site
+      - cp ../.scores/* v0/
+      - echo "$CNAME" > CNAME
+      - git init
+      - git config user.email "deploy-bot@teamopen.dev"
+      - git config user.name "Deployment Bot"
+      - git checkout -b gh-pages
+      - git add --all
+      - git commit -m "Publishing to gh-pages `date`"
+      - git push -f git@github.com:teamopen-dev/sourcecred-stack-lookup gh-pages
 
 trigger:
   branch:
