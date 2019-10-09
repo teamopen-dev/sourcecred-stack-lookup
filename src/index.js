@@ -8,8 +8,15 @@ const {existsSync, writeFileSync, mkdtempSync, createWriteStream, statSync} = re
 const {join: pathJoin, resolve} = require('path');
 const {spawnSync, spawn} = require('child_process');
 
-const verbose = process.env.VERBOSE || false;
+const oneMinute = 60000;
+const oneDay = 24 * 3600 * 1000;
+
+const targetLoadTimeMins = 20;
+const nodePath = process.argv[0];
+
+const verbose = !!process.env.VERBOSE || false;
 const SOURCECRED_GITHUB_TOKEN = process.env.SOURCECRED_GITHUB_TOKEN;
+const cliPath = process.env.SOURCECRED_CLI;
 
 // User ID
 const idu = spawnSync('id', ['-u']);
@@ -47,7 +54,7 @@ const installSite = mkdtempSync(pathJoin(tmpdir(), 'stack-lookup-'));
 writeFileSync(pathJoin(installSite, 'package.json'), JSON.stringify(rootPkg, null, 2));
 const npmRes = spawnSync('npm', ['i', '-f', '--ignore-scripts'], {
 	cwd: installSite,
-	timeout: 60000
+	timeout: oneMinute
 });
 
 if(npmRes.status > 0) {
@@ -96,7 +103,6 @@ mkdirpSync(scoresDir);
 const hexDepOf = ref => Buffer.from(depMap.get(ref), 'utf8').toString('hex');
 
 // See which files are old enough to warrant reloading.
-const oneDay = 24 * 3600 * 1000;
 const oldEnough = new Date(Date.now() - (2 * oneDay));
 const reloadSet =
 	Array.from(depMap.keys())
@@ -104,7 +110,7 @@ const reloadSet =
 		try {
 			const scoresFor = pathJoin(scoresDir, `${hexDepOf(rl)}.json`);
 			const stat = statSync(scoresFor);
-			return stat.mtime <= oldEnough;
+			return stat.size === 0 || stat.mtime <= oldEnough;
 		} catch (e) {
 			return true;
 		}
@@ -112,23 +118,41 @@ const reloadSet =
 
 knuthShuffle(reloadSet);
 console.log('Refs that need reloading:', reloadSet.length);
+const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / reloadSet.length);
+console.log('Timeout per load:', perLoad);
 
 let spawnQueue = Array.from(reloadSet);
+let killTimeout;
 let childToKill = null;
 
-process.once('SIGINT', () => {
+const setKillTimeout = () => {
+	if(killTimeout) {
+		clearTimeout(killTimeout);
+	}
+	killTimeout = setTimeout(() => {
+		childToKill.kill('SIGINT');
+		childToKill = null;
+	}, perLoad);
+};
+
+process.on('SIGINT', () => {
 	if(childToKill) {
-		console.log('Received SIGINT. Forwarding this to our child process. Press Ctrl+C again to exit.');
+		console.log('Received SIGINT. Forwarding this to our child process.');
+		spawnQueue = [];
 		childToKill.kill('SIGINT');
 	} else {
 		process.exit();
+	}
+	if(killTimeout) {
+		clearTimeout(killTimeout);
 	}
 });
 
 const scoreNext = (ref) => {
 	const dep = depMap.get(ref);
 	const output = createWriteStream(pathJoin(scoresDir, `${hexDepOf(ref)}.json`));
-	const scoreSourceCred = spawn('docker', ['run', '--rm', '-i', '-v', `${scDir}:/data`, 'sourcecred/sourcecred:dev', 'scores', ref]);
+	// const scoreSourceCred = spawn('docker', ['run', '--rm', '-i', '-v', `${scDir}:/data`, 'sourcecred/sourcecred:dev', 'scores', ref]);
+	const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
 	childToKill = scoreSourceCred;
 	scoreSourceCred.stdout.pipe(output);
 	scoreSourceCred.stderr.pipe(process.stderr);
@@ -152,15 +176,21 @@ const loadNext = () => {
 		return;
 	}
 
-	const loadSourceCred = spawn('docker', ['run', '--rm', '-i', '-u', uid, '-v', `${scDir}:/data`, '-e', `SOURCECRED_GITHUB_TOKEN=${SOURCECRED_GITHUB_TOKEN}`, 'sourcecred/sourcecred:dev', 'load', ref]);
+	// const loadSourceCred = spawn('docker', ['run', '--rm', '-i', '-u', uid, '-v', `${scDir}:/data`, '-e', `SOURCECRED_GITHUB_TOKEN=${SOURCECRED_GITHUB_TOKEN}`, 'sourcecred/sourcecred:dev', 'load', ref]);
+	const loadSourceCred = spawn(nodePath, [cliPath, 'load', ref], {timeout: perLoad, env: {SOURCECRED_GITHUB_TOKEN, SOURCECRED_DIRECTORY: scDir}});
 	childToKill = loadSourceCred;
+	setKillTimeout();
 	loadSourceCred.stdout.pipe(process.stdout);
 	loadSourceCred.stderr.pipe(process.stderr);
 	loadSourceCred.on('close', (code) => {
 		childToKill = null;
 		console.log(`child process exited with code ${code}`);
 		failedLoad = Math.max(failedLoad, code);
-		scoreNext(ref);
+		if(code === 0) {
+			scoreNext(ref);
+		} else {
+			loadNext();
+		}
 	});
 };
 
