@@ -11,7 +11,7 @@ const {spawnSync, spawn} = require('child_process');
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
 
-const targetLoadTimeMins = 20;
+const targetLoadTimeMins = 40;
 const nodePath = process.argv[0];
 
 const verbose = !!process.env.VERBOSE || false;
