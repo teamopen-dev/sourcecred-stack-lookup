@@ -19,7 +19,8 @@ exports.getDirectDepsFrom = async (relPackageJson) => {
 		deps = new Set([
 			...deps.values(),
 			...(Object.keys(rootPkg.dependencies || {})),
-			...(Object.keys(rootPkg.devDependencies || {}))
+			...(Object.keys(rootPkg.devDependencies || {})),
+			...(Object.keys(rootPkg.peerDependencies || {})),
 		]);
 		allPkgs.push(rootPkg);
 	}
