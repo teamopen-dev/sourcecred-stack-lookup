@@ -60,18 +60,22 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
 	// Filter by resolved.
 	const resolvedReloadSet = reloadSetNpm.filter(p => {
-		const ref = depMap.get(dep);
+		const ref = depMap.get(p);
 		if(!ref) {
-			console.warn('No known GitHub project for package:', dep);
+			console.warn('No known GitHub project for package:', p);
 			return false;
 		}
 		return true;
 	});
 
-	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / resolvedReloadSet.length);
-	console.log('Timeout per load:', perLoad);
+	// It's madness to have < 30s to load. So limit our selection accordingly.
+	const clampedReloadSet = resolvedReloadSet.slice(0, 2 * targetLoadTimeMins);
 
-	let spawnQueue = Array.from(knuthShuffle([...resolvedReloadSet]));
+	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / clampedReloadSet.length);
+	console.log('Queue size:', clampedReloadSet.length);
+	console.log('Timeout per load (s):', perLoad/1000);
+
+	let spawnQueue = Array.from(knuthShuffle([...clampedReloadSet]));
 	let killTimeout;
 	let childToKill = null;
 
