@@ -121,7 +121,7 @@ console.log('Refs that need reloading:', reloadSet.length);
 const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / reloadSet.length);
 console.log('Timeout per load:', perLoad);
 
-let spawnQueue = Array.from(reloadSet);
+const spawnQueue = Array.from(reloadSet);
 let killTimeout;
 let childToKill = null;
 
@@ -170,10 +170,8 @@ const loadNext = () => {
 	const ref = spawnQueue.pop();
 	if(ref === undefined) {
 		if(failedLoad > 0) {
-			throw new Error('One of the deps failed to load');
+			console.warn('One of the deps failed to load');
 		}
-
-		spawnQueue = Array.from(reloadSet);
 		return;
 	}
 
