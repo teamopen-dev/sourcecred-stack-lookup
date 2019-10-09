@@ -52,15 +52,26 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 		});
 
 	console.log('Refs that need reloading:', reloadSetNpm.length);
-	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / reloadSetNpm.length);
-	console.log('Timeout per load:', perLoad);
 
 	// Install in a tmp dir.
 	console.log('Fetching dependency data from NPM');
 	const depMap = await resolveByJsDelivr(reloadSetNpm);
 	if(verbose) console.log(depMap);
 
-	let spawnQueue = Array.from(knuthShuffle([...reloadSetNpm]));
+	// Filter by resolved.
+	const resolvedReloadSet = reloadSetNpm.filter(p => {
+		const ref = depMap.get(dep);
+		if(!ref) {
+			console.warn('No known GitHub project for package:', dep);
+			return false;
+		}
+		return true;
+	});
+
+	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / resolvedReloadSet.length);
+	console.log('Timeout per load:', perLoad);
+
+	let spawnQueue = Array.from(knuthShuffle([...resolvedReloadSet]));
 	let killTimeout;
 	let childToKill = null;
 
