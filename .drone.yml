@@ -27,7 +27,6 @@ steps:
   - name: load-data
     image: sourcecred/sourcecred:dev
     environment:
-      VERBOSE: 'true'
       SOURCECRED_CLI: /code/bin/sourcecred.js
       SOURCECRED_GITHUB_TOKEN:
         from_secret: SOURCECRED_GITHUB_TOKEN
