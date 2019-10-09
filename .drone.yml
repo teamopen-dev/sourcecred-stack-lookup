@@ -32,7 +32,7 @@ steps:
         from_secret: SOURCECRED_GITHUB_TOKEN
     commands:
       - npm i
-      - node src/index.js package.json
+      - node src/index.js examples/widgets-widgets.package.json
 
   - name: rebuild-cache
     image: meltwater/drone-cache:1
