@@ -8,7 +8,7 @@ const {join: pathJoin, resolve} = require('path');
 const {spawnSync, spawn} = require('child_process');
 
 const {getDirectDepsFrom} = require('./directDeps');
-const {resolveByNpmInstall} = require('./ghResolver');
+const {resolveByJsDelivr} = require('./ghResolver');
 
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
@@ -57,7 +57,7 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
 	// Install in a tmp dir.
 	console.log('Fetching dependency data from NPM');
-	const depMap = await resolveByNpmInstall(deps, rootPkg, {verbose});
+	const depMap = await resolveByJsDelivr(reloadSetNpm);
 	if(verbose) console.log(depMap);
 
 	let spawnQueue = Array.from(knuthShuffle([...reloadSetNpm]));

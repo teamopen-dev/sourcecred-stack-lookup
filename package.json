@@ -2,6 +2,7 @@
 	"name": "@teamopen/sourcecred-stack-lookup",
 	"private": true,
 	"dependencies": {
+		"got": "^9.6.0",
 		"knuth-shuffle": "^1.0.8",
 		"mkdirp": "^0.5.1",
 		"rimraf": "^3.0.0"
