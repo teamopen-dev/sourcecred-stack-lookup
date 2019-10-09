@@ -13,7 +13,7 @@ const {resolveByJsDelivr} = require('./ghResolver');
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
 
-const targetLoadTimeMins = 40;
+const targetLoadTimeMins = new Number(process.env.TARGET_LOAD_TIME_MINS || 40);
 const nodePath = process.argv[0];
 
 const verbose = !!process.env.VERBOSE || false;
