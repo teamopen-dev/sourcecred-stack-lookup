@@ -16,7 +16,7 @@ const accumulativeRelativeCred = (fraction, users) => {
   return selectedUsers;
 }
 
-const getAllFromPackage = async (pkgData) => {
+const getAllFromPackage = async (pkgData, clientOpts) => {
 	const packages = Array.from(new Set([
 		...(Object.keys(pkgData.dependencies || {})),
 		...(Object.keys(pkgData.devDependencies || {})),
@@ -24,7 +24,7 @@ const getAllFromPackage = async (pkgData) => {
 	]));
 
 	// Get the meta file for looking up which scores are available.
-	const remote = createRemoteClient();
+	const remote = createRemoteClient(clientOpts);
 	const meta = await remote.getMeta();
 	if(meta.version !== 1) {
 		throw new Error('Expecting meta version 1, got:', meta.version);
@@ -47,11 +47,11 @@ const getAllFromPackage = async (pkgData) => {
 };
 
 // Start running as async.
-(async () => {
+exports.example = async (clientOpts) => {
 
 	// Take an example file.
 	const pkgData = require('../examples/6.package.json');
-	const scoreMap = await getAllFromPackage(pkgData);
+	const scoreMap = await getAllFromPackage(pkgData, clientOpts);
 	console.log(scoreMap.keys());
 
 	// Example interpretation
@@ -62,4 +62,4 @@ const getAllFromPackage = async (pkgData) => {
 		console.log(ref, '40% done by:', map);
 	}
 
-})();
+};
