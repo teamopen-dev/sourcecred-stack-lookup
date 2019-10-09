@@ -71,18 +71,23 @@ exports.resolveByJsDelivr = async (deps)  => {
 
 	// Get packages one by one.
 	for (const dep of deps) {
-		const url = `https://cdn.jsdelivr.net/npm/${dep}/package.json`;
-		const httpResult = await got.get(url, {json: true});
-		const refs = scanForRefs(httpResult.body);
+		try {
+			const url = `https://cdn.jsdelivr.net/npm/${dep}/package.json`;
+			const httpResult = await got.get(url, {json: true});
+			const refs = scanForRefs(httpResult.body);
 
-		if(refs.length === 0) {
-			console.warn(`No match for package: ${dep}`);
-		}
-		if(refs.length > 1) {
-			console.warn(`Ambiquous matches for package: ${dep}`, refs);
-		}
-		if(refs.length === 1) {
-			depMap.set(dep, refs[0]);
+			if(refs.length === 0) {
+				console.warn(`No match for package: ${dep}`);
+			}
+			if(refs.length > 1) {
+				console.warn(`Ambiquous matches for package: ${dep}`, refs);
+			}
+			if(refs.length === 1) {
+				depMap.set(dep, refs[0]);
+			}
+		} catch (e) {
+			console.warn(`Failed to read package.json for package: ${dep}`, e.message || e);
+			continue;
 		}
 	}
 
