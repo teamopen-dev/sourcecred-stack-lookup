@@ -39,7 +39,7 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
 
 	const scoreNext = (dep, ref) => {
 		const output = createWriteStream(pathJoin(scoresDir, `${hexOf(dep)}.json`));
-		const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
+		const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: 3 * oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
 		childToKill = scoreSourceCred;
 		scoreSourceCred.stdout.pipe(output);
 		scoreSourceCred.stderr.pipe(process.stderr);
