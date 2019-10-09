@@ -1,6 +1,7 @@
 {
 	"name": "@teamopen/sourcecred-stack-lookup",
 	"private": true,
+	"license": "BlueOak-1.0.0",
 	"dependencies": {
 		"got": "^9.6.0",
 		"knuth-shuffle": "^1.0.8",
