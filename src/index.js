@@ -58,11 +58,11 @@ const cliPath = process.env.SOURCECRED_CLI;
 		return true;
 	});
 
-	// It's madness to have < 30s to load. So limit our selection accordingly.
-	const clampedReloadSet = resolvedReloadSet.slice(0, 2 * targetLoadTimeMins);
+	// It's madness to have < 60s to load. So limit our selection accordingly.
+	const clampedReloadSet = resolvedReloadSet.slice(0, targetLoadTimeMins);
 
 	const perLoad = Math.ceil(oneMinute * targetLoadTimeMins / clampedReloadSet.length);
-	console.log('Queue size:', clampedReloadSet.length);
+	console.log('Queue size:', clampedReloadSet.length, '/', resolvedReloadSet.length);
 	console.log('Timeout per load (s):', perLoad/1000);
 
 	startLoadingScores({reloadSet: clampedReloadSet, scoresDir, scDir, depMap, nodePath, cliPath, perLoad, meta, SOURCECRED_GITHUB_TOKEN});
