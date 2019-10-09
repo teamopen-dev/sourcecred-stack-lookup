@@ -5,6 +5,7 @@ const {example} = require('../index');
 // Our "main" function?
 // Just want async/await in a scripting context :D
 (async () => {
-  await example(require('axios'));
+  const results = await example(require('axios'));
+  console.log(results);
 })();
 

@@ -16,7 +16,7 @@ const accumulativeRelativeCred = (fraction, users) => {
   return selectedUsers;
 }
 
-const getAllFromPackage = async (pkgData, axios) => {
+const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios) => {
 	const packages = Array.from(new Set([
 		...(Object.keys(pkgData.dependencies || {})),
 		...(Object.keys(pkgData.devDependencies || {})),
@@ -52,14 +52,15 @@ exports.example = async (axios) => {
 	// Take an example file.
 	const pkgData = require('../examples/6.package.json');
 	const scoreMap = await getAllFromPackage(pkgData, axios);
-	console.log(scoreMap.keys());
 
 	// Example interpretation
+  const results = new Map();
 	for (const [ref, scores] of scoreMap.entries()) {
 		const users = scores[1].users;
 		const selected = accumulativeRelativeCred(0.4, users);
 		const map = new Map(selected.map(u => [u.address[4], u.totalCred]));
-		console.log(ref, '40% done by:', map);
+		results.set(ref, map);
 	}
 
+  return results;
 };
