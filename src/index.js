@@ -9,6 +9,7 @@ const {spawnSync, spawn} = require('child_process');
 
 const {getDirectDepsFrom} = require('./directDeps');
 const {resolveByJsDelivr} = require('./ghResolver');
+const {createMetaFileHandle} = require('./metaFile');
 
 const oneMinute = 60000;
 const oneDay = 24 * 3600 * 1000;
@@ -37,19 +38,13 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 	mkdirpSync(scDir);
 	mkdirpSync(scoresDir);
 
+	// Get our metadata.
+	const meta = await createMetaFileHandle(scoresDir, {verbose: true});
+
 	// Find out which we need to reload.
-	const oldEnough = new Date(Date.now() - (2 * oneDay));
 	const reloadSetNpm =
 		Array.from(deps.values())
-		.filter(npmName => {
-			try {
-				const scoresFor = pathJoin(scoresDir, `${hexOf(npmName)}.json`);
-				const stat = statSync(scoresFor);
-				return stat.size === 0 || stat.mtime <= oldEnough;
-			} catch (e) {
-				return true;
-			}
-		});
+		.filter(npmName => meta.hasAge(npmName, 2 * oneDay));
 
 	console.log('Refs that need reloading:', reloadSetNpm.length);
 
@@ -112,6 +107,7 @@ const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 		scoreSourceCred.on('close', (code) => {
 			childToKill = null;
 			output.end();
+			meta.bumpScore(dep);
 			console.log(`child process exited with code ${code}`);
 			loadNext();
 		});
