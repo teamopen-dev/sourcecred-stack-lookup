@@ -29,8 +29,17 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
   };
 
   const tryLoad = async () => {
+    let metaData;
     try {
-      const metaData = JSON.parse(ungzip(await readFile(metaGzPath), {to: 'string'}));
+      metaData = JSON.parse(ungzip(await readFile(metaGzPath), {to: 'string'}));
+    } catch(e) {
+      if(e.code !== 'ENOENT') {
+        console.warn('Problem loading metadata', e);
+        return;
+      }
+    }
+    try {
+      if(!metaData) metaData = JSON.parse(await readFile(metaPath));
       if(metaData.version === 1){
         const {packageRefs, sourceCredRefs} = metaData;
         meta.packageRefs = packageRefs;
@@ -40,7 +49,7 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
       }
     } catch(e) {
       if(e.code == 'ENOENT') return;
-      if(verbose) console.warn('Problem loading metadata', e);
+      console.warn('Problem loading metadata', e);
     }
   };
 
