@@ -24,32 +24,10 @@ steps:
         - './.sourcecred'
         - './.scores'
 
-  - name: restore-cache-tar
-    image: meltwater/drone-cache:1
-    environment: &minio-cache-env-tar
-      S3_ENDPOINT: https://minio.teamopen.dev
-      S3_REGION: eu-west-1
-      S3_BUCKET: drone-cache-teamopen
-      # Path style buckets is used for minio hosts, AWS S3 should be false
-      PLUGIN_PATH_STYLE: true
-      PLUGIN_ARCHIVE_FORMAT: tar
-      PLUGIN_ACCESS_KEY:
-        from_secret: MINIO_ACCESS_KEY
-      PLUGIN_SECRET_KEY:
-        from_secret: MINIO_SECRET_KEY
-    settings:
-      restore: true
-      cache_key: update-scores-tar
-      # Each mount path is stored individually, so you can split them later
-      # without needing a separate cache_key for each of them.
-      mount:
-        - './.sourcecred'
-        - './.scores'
-
   - name: load-data
     image: sourcecred/sourcecred:dev
     environment:
-      TARGET_LOAD_TIME_MINS: 5
+      TARGET_LOAD_TIME_MINS: 31
       SOURCECRED_CLI: /code/bin/sourcecred.js
       SOURCECRED_GITHUB_TOKEN:
         from_secret: SOURCECRED_GITHUB_TOKEN
@@ -65,22 +43,6 @@ steps:
     settings:
       rebuild: true
       cache_key: update-scores
-      mount:
-        - './.sourcecred'
-        - './.scores'
-    when:
-      status:
-        - success
-        - failure
-
-  - name: rebuild-cache-tar
-    image: meltwater/drone-cache:1
-    # This is called an alias (the *name), and references an anchor (the &name) for reusing it's values.
-    # It's part of the YAML specification.
-    environment: *minio-cache-env-tar
-    settings:
-      rebuild: true
-      cache_key: update-scores-tar
       mount:
         - './.sourcecred'
         - './.scores'
