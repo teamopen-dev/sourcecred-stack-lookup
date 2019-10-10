@@ -33,7 +33,7 @@ steps:
         from_secret: SOURCECRED_GITHUB_TOKEN
     commands:
       - npm i
-      - gzip -fk .scores/*.json
+      - rm .scores/*.json
       - node src/cli.js examples/*.package.json
 
   - name: rebuild-cache
