@@ -1,7 +1,7 @@
 'use strict';
 
 const delay = require('delay');
-const {Deflate, Inflate} = require('pako/dist/pako.js');
+const {Inflate} = require('pako/dist/pako_inflate.js');
 
 const API_URL = 'https://scsl.teamopen.dev/v0/';
 const TIMEOUT = 10000;
@@ -28,11 +28,10 @@ const makeNice = (FlateType) => async (data, opts) => {
   return flate.result;
 };
 
-const gzipNice = makeNice(Deflate);
 const ungzipNice = makeNice(Inflate);
 
 exports.createRemoteClient = (axios, opts) => {
-	const {apiURL} = opts || {};
+	const {apiURL, verbose} = opts || {};
 	const baseURL = API_URL || apiURL;
 	const request = axiosReq(axios);
 
@@ -40,15 +39,14 @@ exports.createRemoteClient = (axios, opts) => {
     const res = await request({
       baseURL,
       method: 'get',
-      url: 'meta.json',
+      url: 'meta.json.gz',
       timeout: TIMEOUT,
+      responseType: 'arraybuffer',
     });
     const start = Date.now();
-    const pak = await gzipNice(Buffer.from(JSON.stringify(res)));
-    const mid = Date.now();
-    const out = JSON.parse(await ungzipNice(pak, {to: 'string'}));
-    const took = [mid - start, Date.now() - mid];
-    console.log('rezip', took);
+    const out = JSON.parse(await ungzipNice(res, {to: 'string'}));
+    const took = Date.now() - start;
+    if(verbose) console.log('gzip', 'meta.json.gz', took);
     return out;
   }
 
@@ -56,15 +54,14 @@ exports.createRemoteClient = (axios, opts) => {
     const res = await request({
       baseURL,
       method: 'get',
-      url: `${hexOf(sourcecredRef)}.json`,
+      url: `${hexOf(sourcecredRef)}.json.gz`,
       timeout: TIMEOUT,
+      responseType: 'arraybuffer',
     });
     const start = Date.now();
-    const pak = await gzipNice(Buffer.from(JSON.stringify(res)));
-    const mid = Date.now();
-    const out = JSON.parse(await ungzipNice(pak, {to: 'string'}));
-    const took = [mid - start, Date.now() - mid];
-    console.log('rezip', took);
+    const out = JSON.parse(await ungzipNice(res, {to: 'string'}));
+    const took = Date.now() - start;
+    if(verbose) console.log('gzip', `${hexOf(sourcecredRef)}.json.gz`, took);
     return out;
   }
 

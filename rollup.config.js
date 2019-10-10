@@ -6,7 +6,7 @@ import json from "rollup-plugin-json";
 
 export default {
   input: "src/client.js",
-  external: ['pako'],
+  external: ['pako/dist/pako_inflate.js'],
   output: {
     format: "umd",
     name: "TeamOpenSourcecredStackLookup",

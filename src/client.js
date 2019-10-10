@@ -16,7 +16,7 @@ const accumulativeRelativeCred = (fraction, users) => {
   return selectedUsers;
 }
 
-const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios) => {
+const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios, {verbose}) => {
 	const packages = Array.from(new Set([
 		...(Object.keys(pkgData.dependencies || {})),
 		...(Object.keys(pkgData.devDependencies || {})),
@@ -24,7 +24,7 @@ const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios) => 
 	]));
 
 	// Get the meta file for looking up which scores are available.
-	const remote = createRemoteClient(axios);
+	const remote = createRemoteClient(axios, {verbose});
 	const meta = await remote.getMeta();
 	if(meta.version !== 1) {
 		throw new Error('Expecting meta version 1, got:', meta.version);
@@ -47,11 +47,15 @@ const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios) => 
 };
 
 // Start running as async.
-exports.example = async (axios) => {
+exports.example = async (axios, opts) => {
+  const {verbose} = opts || {verbose: true};
 
 	// Take an example file.
 	const pkgData = require('../examples/6.package.json');
-	const scoreMap = await getAllFromPackage(pkgData, axios);
+  const start = Date.now();
+	const scoreMap = await getAllFromPackage(pkgData, axios, {verbose});
+  const mid = Date.now();
+  if(verbose) console.log('Getting packages', mid - start);
 
 	// Example interpretation
   const results = new Map();
@@ -61,6 +65,8 @@ exports.example = async (axios) => {
 		const map = new Map(selected.map(u => [u.address[4], u.totalCred]));
 		results.set(ref, map);
 	}
+
+  if(verbose) console.log('Interpretation', Date.now() - mid);
 
   return results;
 };
