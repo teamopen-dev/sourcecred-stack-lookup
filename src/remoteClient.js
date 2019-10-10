@@ -19,9 +19,11 @@ const makeNice = (FlateType) => async (data, opts) => {
     ...(opts || {}),
   });
 
-  for (let i = 0; i < data.length; i += niceChunk) {
+  const len = data.length || data.byteLength;
+
+  for (let i = 0; i < len; i += niceChunk) {
     await delay(1);
-    flate.push(data.slice(i, i + niceChunk), i + niceChunk >= data.length);
+    flate.push(data.slice(i, i + niceChunk), i + niceChunk >= len);
   }
 
   if (flate.err) throw flate.err;
