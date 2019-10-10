@@ -39,7 +39,7 @@ steps:
         from_secret: MINIO_SECRET_KEY
     settings:
       restore: true
-      cache_key: update-scores
+      cache_key: update-scores-tar
       # Each mount path is stored individually, so you can split them later
       # without needing a separate cache_key for each of them.
       mount:
