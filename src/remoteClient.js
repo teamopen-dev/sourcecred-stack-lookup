@@ -44,10 +44,11 @@ exports.createRemoteClient = (axios, opts) => {
       responseType: 'arraybuffer',
     });
     const start = Date.now();
-    const out = JSON.parse(await ungzipNice(res, {to: 'string'}));
+    const buf = await ungzipNice(res, {to: 'string'});
     const took = Date.now() - start;
+    if(verbose) console.log('inflated', typeof buf, buf.slice && buf.slice(0, 100));
     if(verbose) console.log('gzip', 'meta.json.gz', took);
-    return out;
+    return JSON.parse(buf);
   }
 
   const getScores = async (sourcecredRef) => {
@@ -59,10 +60,11 @@ exports.createRemoteClient = (axios, opts) => {
       responseType: 'arraybuffer',
     });
     const start = Date.now();
-    const out = JSON.parse(await ungzipNice(res, {to: 'string'}));
+    const buf = await ungzipNice(res, {to: 'string'});
     const took = Date.now() - start;
+    if(verbose) console.log('inflated', typeof buf, buf.slice && buf.slice(0, 100));
     if(verbose) console.log('gzip', `${hexOf(sourcecredRef)}.json.gz`, took);
-    return out;
+    return JSON.parse(buf);
   }
 
   return {
