@@ -22,39 +22,39 @@ const cliPath = process.env.SOURCECRED_CLI;
 // Just want async/await in a scripting context :D
 (async () => {
 
-	// Locate the supplied package.json
-	const relPath = process.argv.slice(2);
-	const {deps} = await getDirectDepsFrom(relPath);
-	if(verbose) console.log('Dependencies:', deps);
+  // Locate the supplied package.json
+  const relPath = process.argv.slice(2);
+  const {deps} = await getDirectDepsFrom(relPath);
+  if(verbose) console.log('Dependencies:', deps);
 
-	// Switch from tmp dir to local data.
-	const scDir = resolve(process.cwd(), '.sourcecred');
-	const scoresDir = resolve(process.cwd(), '.scores');
-	mkdirpSync(scDir);
-	mkdirpSync(scoresDir);
+  // Switch from tmp dir to local data.
+  const scDir = resolve(process.cwd(), '.sourcecred');
+  const scoresDir = resolve(process.cwd(), '.scores');
+  mkdirpSync(scDir);
+  mkdirpSync(scoresDir);
 
-	// Get our metadata.
-	const meta = await createMetaFileHandle(scoresDir, {verbose});
+  // Get our metadata.
+  const meta = await createMetaFileHandle(scoresDir, {verbose});
 
-	// Find out which we need to reload.
-	const reloadSetNpm =
-		Array.from(deps.values())
-		.filter(npmName => meta.packageHasAge(npmName, 2 * oneDay));
+  // Find out which we need to reload.
+  const reloadSetNpm =
+    Array.from(deps.values())
+    .filter(npmName => meta.packageHasAge(npmName, 2 * oneDay));
 
-	console.log('Packages that need reloading:', reloadSetNpm.length);
+  console.log('Packages that need reloading:', reloadSetNpm.length);
 
-	// Install in a tmp dir.
-	console.log('Fetching dependency data from NPM');
-	const depMap = await resolveByJsDelivr(reloadSetNpm);
-	if(verbose) console.log(depMap);
-	meta.storePackageRefs(depMap);
+  // Install in a tmp dir.
+  console.log('Fetching dependency data from NPM');
+  const depMap = await resolveByJsDelivr(reloadSetNpm);
+  if(verbose) console.log(depMap);
+  meta.storePackageRefs(depMap);
 
-	// Map dependencies to refs.
-	const reloadSet = meta.packagesToRefs(reloadSetNpm);
+  // Map dependencies to refs.
+  const reloadSet = meta.packagesToRefs(reloadSetNpm);
 
-	// It's madness to have < 60s to load. So limit our selection accordingly.
-	const clampedReloadSet = reloadSet.slice(0, targetLoadTimeMins);
-	console.log('Queue size:', reloadSet.length);
+  // It's madness to have < 60s to load. So limit our selection accordingly.
+  const clampedReloadSet = reloadSet.slice(0, targetLoadTimeMins);
+  console.log('Queue size:', reloadSet.length);
 
-	startLoadingScores({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, meta, targetLoadTimeMins, SOURCECRED_GITHUB_TOKEN});
+  startLoadingScores({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, meta, targetLoadTimeMins, SOURCECRED_GITHUB_TOKEN});
 })();
