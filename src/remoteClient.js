@@ -1,5 +1,7 @@
 'use strict';
 
+const {gzip, ungzip} = require('pako');
+
 const API_URL = 'https://scsl.teamopen.dev/v0/';
 const TIMEOUT = 10000;
 
@@ -14,22 +16,40 @@ exports.createRemoteClient = (axios, opts) => {
 	const baseURL = API_URL || apiURL;
 	const request = axiosReq(axios);
 
-	const getMeta = () => request({
-		baseURL,
-		method: 'get',
-		url: 'meta.json',
-		timeout: TIMEOUT,
-	});
+	const getMeta = async () => {
+    const res = await request({
+      baseURL,
+      method: 'get',
+      url: 'meta.json',
+      timeout: TIMEOUT,
+    });
+    const start = Date.now();
+    const pak = gzip(Buffer.from(JSON.stringify(res)));
+    const mid = Date.now();
+    const out = JSON.parse(ungzip(pak, {to: 'string'}));
+    const took = [mid - start, Date.now() - mid];
+    console.log('rezip', took);
+    return out;
+  }
 
-	const getScores = (sourcecredRef) => request({
-		baseURL,
-		method: 'get',
-		url: `${hexOf(sourcecredRef)}.json`,
-		timeout: TIMEOUT,
-	});
+  const getScores = async (sourcecredRef) => {
+    const res = await request({
+      baseURL,
+      method: 'get',
+      url: `${hexOf(sourcecredRef)}.json`,
+      timeout: TIMEOUT,
+    });
+    const start = Date.now();
+    const pak = gzip(Buffer.from(JSON.stringify(res)));
+    const mid = Date.now();
+    const out = JSON.parse(ungzip(pak, {to: 'string'}));
+    const took = [mid - start, Date.now() - mid];
+    console.log('rezip', took);
+    return out;
+  }
 
-	return {
-		getMeta,
-		getScores
-	};
+  return {
+    getMeta,
+    getScores
+  };
 };
