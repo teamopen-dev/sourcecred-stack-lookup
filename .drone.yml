@@ -64,7 +64,7 @@ steps:
       - echo "$SSH_DEPLOY_KEY" > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
       - mkdir -p site/v0
       - cd site
-      - cp ../.scores/*.gz v0/
+      - cp ../.scores/* v0/
       - echo "$CNAME" > CNAME
       - git init
       - git config user.email "deploy-bot@teamopen.dev"
