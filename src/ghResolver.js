@@ -8,15 +8,22 @@ const {join: pathJoin} = require('path');
 const {spawnSync, spawn} = require('child_process');
 
 const oneMinute = 60000;
-const ghPattern = new RegExp(/github\.com\/[^\/]+\/[^\/#\?"']+/gi);
-const stripGh = str => str.startsWith('github.com/') ? str.slice('github.com/'.length) : str;
+const shortRepoPattern = new RegExp(/^(github[\/:])?([^\/]+\/[^\/#\?"']+)$/i);
+const ghPattern = new RegExp(/(git@)?github\.com[\/:]([^\/]+\/[^\/#\?"']+)(\.git)?/gi);
+const stripGitAt = str => str.startsWith('git@') ? str.slice('git@'.length) : str;
+const stripGh = str => str.startsWith('github.com') ? str.slice('github.com/'.length) : str;
 const stripGit = str => str.endsWith('.git') ? str.slice(0, '.git'.length * -1) : str;
+const normalize = str => stripGh(stripGitAt(stripGit(str))).toLowerCase();
 
 const scanForRefs = packageData => {
 	const {bugs, homepage, repository} = packageData;
 	const suspects = JSON.stringify({bugs, homepage, repository});
-	const hits = [...suspects.matchAll(ghPattern)].map(m => m[0]);
-	const uniqueHits = new Set(hits.map(stripGh).map(stripGit));
+	const hits = [...suspects.matchAll(ghPattern)].map(m => m[2]);
+	const shortRepo = shortRepoPattern.exec(repository);
+	if(shortRepo && shortRepo[2]) {
+		hits.push(shortRepo[2]);
+	}
+	const uniqueHits = new Set(hits.map(normalize));
 	return Array.from(uniqueHits.values());
 };
 

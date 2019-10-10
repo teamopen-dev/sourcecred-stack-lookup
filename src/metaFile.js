@@ -25,7 +25,7 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
 		sourceCredRefs: {},
 		packageRefs: {}
 	};
-	
+
 	const tryLoad = async () => {
 		try {
 			const metaData = JSON.parse(await readFile(metaPath));
@@ -44,7 +44,6 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
 
 	const flush = async () => {
 		try {
-			// meta.sourceCredRefs = sortObjByVal(meta.sourceCredRefs);
 			await writeFile(metaPath, JSON.stringify(meta, null, 2));
 		} catch(e) {
 			if(verbose) console.warn('Problem flushing metadata', e);
