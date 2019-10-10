@@ -13,36 +13,23 @@ const axiosReq = axios => (...args) => {
 };
 
 const niceChunk = 1024*1024; // 1MB
-const gzipNice = async (data, opts) => {
-  const deflate = new Deflate({
+const makeNice = (FlateType) => async (data, opts) => {
+  const flate = new FlateType({
     gzip: true,
     ...(opts || {}),
   });
 
-  console.log('Deflate Chunks =', Math.ceil(data.length / niceChunk));
   for (let i = 0; i < data.length; i += niceChunk) {
     await delay(1);
-    deflate.push(data.slice(i, i + niceChunk), i + niceChunk >= data.length);
+    flate.push(data.slice(i, i + niceChunk), i + niceChunk >= data.length);
   }
 
-  if (deflate.err) throw deflate.err;
-  return deflate.result;
+  if (flate.err) throw flate.err;
+  return flate.result;
 };
 
-const ungzipNice = async (data, opts) => {
-  const inflate = new Inflate({
-    ...(opts || {}),
-  });
-
-  console.log('Inflate Chunks =', Math.ceil(data.length / niceChunk));
-  for (let i = 0; i < data.length; i += niceChunk) {
-    await delay(0);
-    inflate.push(data.slice(i, i + niceChunk), i + niceChunk >= data.length);
-  }
-
-  if (inflate.err) throw inflate.err;
-  return inflate.result;
-};
+const gzipNice = makeNice(Deflate);
+const ungzipNice = makeNice(Inflate);
 
 exports.createRemoteClient = (axios, opts) => {
 	const {apiURL} = opts || {};
