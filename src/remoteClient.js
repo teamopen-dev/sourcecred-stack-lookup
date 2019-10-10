@@ -1,6 +1,6 @@
 'use strict';
 
-const {gzip, ungzip} = require('pako');
+const {gzip, ungzip} = require('pako/dist/pako.js');
 
 const API_URL = 'https://scsl.teamopen.dev/v0/';
 const TIMEOUT = 10000;
