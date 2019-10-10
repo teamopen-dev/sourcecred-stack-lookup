@@ -20,7 +20,6 @@ const sortObjByVal = (obj, ascending) => {
 };
 
 exports.createMetaFileHandle = async (dir, {verbose}) => {
-  const metaPath = pathJoin(dir, 'meta.json');
   const metaGzPath = pathJoin(dir, 'meta.json.gz');
   const meta = {
     version: 1,
@@ -29,17 +28,8 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
   };
 
   const tryLoad = async () => {
-    let metaData;
     try {
-      metaData = JSON.parse(ungzip(await readFile(metaGzPath), {to: 'string'}));
-    } catch(e) {
-      if(e.code !== 'ENOENT') {
-        console.warn('Problem loading metadata', e);
-        return;
-      }
-    }
-    try {
-      if(!metaData) metaData = JSON.parse(await readFile(metaPath));
+      const metaData = JSON.parse(ungzip(await readFile(metaGzPath), {to: 'string'}));
       if(metaData.version === 1){
         const {packageRefs, sourceCredRefs} = metaData;
         meta.packageRefs = packageRefs;
@@ -57,7 +47,6 @@ exports.createMetaFileHandle = async (dir, {verbose}) => {
     try {
       const json = JSON.stringify(meta, null, 2);
       const jsonGz = gzip(json);
-      await writeFile(metaPath, json);
       await writeFile(metaGzPath, jsonGz);
     } catch(e) {
       if(verbose) console.warn('Problem flushing metadata', e);

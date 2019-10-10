@@ -2,10 +2,10 @@
 
 const {knuthShuffle} = require('knuth-shuffle');
 const {spawn} = require('child_process');
-const {createWriteStream, readFileSync, writeFileSync} = require('fs');
+const {readFileSync, writeFile} = require('fs').promises;
 const {join: pathJoin} = require('path');
 const delay = require('delay');
-const {gzip} = require('pako');
+const {gzip, Deflate} = require('pako');
 
 const oneMinute = 60000;
 const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
@@ -44,27 +44,26 @@ exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cl
   });
 
   const scoreNext = (ref) => {
-    const jsonPath = pathJoin(scoresDir, `${hexOf(ref)}.json`);
-    const jsonGzPath = `${jsonPath}.gz`;
-    const output = createWriteStream(jsonPath);
+    const deflate = new Deflate({gzip: true, level: 9});
+    const jsonGzPath = pathJoin(scoresDir, `${hexOf(ref)}.json.gz`);
     const scoreSourceCred = spawn(nodePath, [cliPath, 'scores', ref], {timeout: oneMinute, env: {SOURCECRED_DIRECTORY: scDir}});
     childToKill = scoreSourceCred;
-    scoreSourceCred.stdout.pipe(output);
+
+    // Pipe data into gzip.
+    scoreSourceCred.stdout.on('data', (chunk) => {
+      deflate.push(chunk, false);
+    });
+    scoreSourceCred.stdout.on('end', async (chunk) => {
+      deflate.push(Buffer.alloc(0), true);
+      await writeFile(jsonGzPath, deflate.result);
+    });
+
     scoreSourceCred.stderr.pipe(process.stderr);
     scoreSourceCred.on('close', async (code) => {
       childToKill = null;
-      output.end();
       meta.bumpScore(ref);
       console.log(`child process exited with code ${code}`);
       loadNext();
-
-      // Convert to gzip in parallel.
-      await delay(0);
-      const json = readFileSync(jsonPath);
-      await delay(0);
-      const jsonGz = gzip(json);
-      await delay(0);
-      writeFileSync(jsonGzPath, jsonGz);
     });
   };
 
