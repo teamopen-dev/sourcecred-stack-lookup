@@ -1,10 +1,12 @@
 [![Build Status](https://drone.teamopen.dev/api/badges/teamopen-dev/sourcecred-stack-lookup/status.svg)](https://drone.teamopen.dev/teamopen-dev/sourcecred-stack-lookup)
 [![license BlueOak-1.0.0](https://badgen.net/badge/license/BlueOak-1.0.0)](LICENSE.md)
+[![npm version](https://badgen.net/npm/v/@teamopen/sourcecred-stack-lookup/alpha)](https://www.npmjs.com/package/@teamopen/sourcecred-stack-lookup)
 
-# Sourcecred stack lookup
+# SourceCred stack lookup
 
 Find out how your direct NPM dependencies are doing.
 
+Learn more about SourceCred: https://sourcecred.io/
 
 ### Example usage
 
