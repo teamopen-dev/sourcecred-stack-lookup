@@ -35,7 +35,7 @@ steps:
     commands:
       - npm i
       - gzip -df .sourcecred/cache/*.db.gz
-      - node src/cli.js examples/*.package.json
+      - node src/cli.js examples/*.package.json ./package.json
       - gzip -f .sourcecred/cache/*.db
 
   - name: rebuild-cache
