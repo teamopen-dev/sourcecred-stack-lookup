@@ -18,6 +18,9 @@
   },
   "scripts": {
     "build": "rollup -c rollup.config.js",
+    "check-pretty": "prettier --list-different '**/*.js'",
+    "prettify": "prettier --write '**/*.js'",
+    "test": "npm run check-pretty",
     "lookup": "bin/sourcecred-stack-lookup",
     "release": "npm run build && xyz --repo git@github.com:teamopen-dev/sourcecred-stack-lookup.git --tag 'vX.Y.Z' --increment",
     "release:alpha": "npm run build && xyz --repo git@github.com:teamopen-dev/sourcecred-stack-lookup.git --tag 'vX.Y.Z' --publish-command 'npm publish --tag=alpha' --prerelease-label alpha --increment"
@@ -31,6 +34,7 @@
     "got": "^9.6.0",
     "knuth-shuffle": "^1.0.8",
     "mkdirp": "^0.5.1",
+    "prettier": "^1.18.2",
     "rimraf": "^3.0.0",
     "rollup": "^1.23.1",
     "rollup-plugin-commonjs": "^10.1.0",
