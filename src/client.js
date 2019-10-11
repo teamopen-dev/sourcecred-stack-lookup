@@ -1,22 +1,9 @@
 'use strict';
 
+const {userBusFactor} = require('./interpretationCases');
 const {createRemoteClient} = require('./remoteClient');
 
-// Interpretation stuff.
-const globalCredOf = users => users.reduce((sum, u) => sum + u.totalCred, 0);
-const accumulativeRelativeCred = (fraction, users) => {
-  const globalCred = globalCredOf(users);
-  const targetAccumulative = globalCred * fraction;
-  const selectedUsers = [];
-  for(let acc=0, cred=0, i=0; acc < targetAccumulative; i++) {
-    const user = users[i];
-    selectedUsers.push(user);
-    acc += user.totalCred;
-  }
-  return selectedUsers;
-}
-
-const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios, {verbose}) => {
+const getAllFromPackage = async (pkgData, axios, {verbose}) => {
 	const packages = Array.from(new Set([
 		...(Object.keys(pkgData.dependencies || {})),
 		...(Object.keys(pkgData.devDependencies || {})),
@@ -47,7 +34,7 @@ const getAllFromPackage = exports.getAllFromPackage = async (pkgData, axios, {ve
 };
 
 // Start running as async.
-exports.example = async (axios, opts) => {
+const example = async (axios, opts) => {
   const {verbose} = opts || {verbose: true};
 
 	// Take an example file.
@@ -58,15 +45,14 @@ exports.example = async (axios, opts) => {
   if(verbose) console.log('Getting packages', mid - start);
 
 	// Example interpretation
-  const results = new Map();
-	for (const [ref, scores] of scoreMap.entries()) {
-		const users = scores[1].users;
-		const selected = accumulativeRelativeCred(0.4, users);
-		const map = new Map(selected.map(u => [u.address[4], u.totalCred]));
-		results.set(ref, map);
-	}
-
+  const results = userBusFactor(scoreMap);
   if(verbose) console.log('Interpretation', Date.now() - mid);
 
   return results;
+};
+
+module.exports = {
+  userBusFactor,
+  getAllFromPackage,
+  example,
 };
