@@ -14,7 +14,7 @@ const oneDay = 24 * 3600 * 1000;
 const targetLoadTimeMins = new Number(process.env.TARGET_LOAD_TIME_MINS || 10);
 const nodePath = process.argv[0];
 
-const verbose = !!process.env.VERBOSE || false;
+const verbose = process.env.VERBOSE == 'y' || false;
 const SOURCECRED_GITHUB_TOKEN = process.env.SOURCECRED_GITHUB_TOKEN;
 const cliPath = process.env.SOURCECRED_CLI;
 

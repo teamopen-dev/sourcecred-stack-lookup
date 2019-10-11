@@ -5,3 +5,39 @@
 
 Find out how your direct NPM dependencies are doing.
 
+
+### Example usage
+
+Install `npm i -D @teamopen/sourcecred-stack-lookup@alpha`.
+
+Add a script:
+
+```json
+{
+  "scripts": {
+    "lookup": "sourcecred-stack-lookup"
+  }
+}
+```
+
+Run the lookup `npm run -s lookup`.
+
+### Parameters
+
+ENV vars to tweak:
+
+- `DETAILED=n` [y/n], gives more detail about scores
+- `RATING=3` [1,2,3,4], the minimal rating to report.
+  Corresponds to 1=Low, 2=Medium, 3=High, 4=CRITICAL.
+
+Example usage in scripts:
+
+```json
+{
+  "scripts": {
+    "lookup": "DETAILED=y RATING=4 sourcecred-stack-lookup"
+  }
+}
+```
+
+Shows detailed information for critical results.

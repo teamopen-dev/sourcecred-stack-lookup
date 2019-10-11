@@ -11,8 +11,8 @@ const LOW = 1;
 
 // Impact ratings, based on absolute cred.
 const rate = (cred) =>
-  cred > 500 ? HIGH :
-  cred > 100 ? MEDIUM :
+  cred >= 1000 ? HIGH :
+  cred >= 300 ? MEDIUM :
   LOW;
 
 const offsetRating = (user, project) =>
@@ -35,7 +35,7 @@ const userBusFactor = (scoreMap, opts) => {
   // Where 60% of the work is done by 5 people or less.
   const {fraction, userThreshold, minTotalRating} = {
     fraction: 0.6,
-    userThreshold: 5,
+    userThreshold: 4,
     minTotalRating: LOW,
     ...(opts || {})
   };

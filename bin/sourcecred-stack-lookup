@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+'use strict';
+
+const axios = require('axios');
+const {resolve} = require('path');
+const {readFile} = require('fs').promises;
+const {getAllFromPackage, userBusFactor} = require('../index');
+
+const ratings = new Map([
+  ['CRITICAL', 4],
+  ['HIGH', 3],
+  ['Medium', 2],
+  ['Low', 1],
+]);
+
+// Our "main" function?
+// Just want async/await in a scripting context :D
+(async () => {
+  const verbose = process.env.VERBOSE == 'y' || false;
+  const detailed = process.env.DETAILED == 'y' || false;
+  const minTotalRating = process.env.RATING ? new Number(process.env.RATING) : 3;
+
+  // If we have a package.json file in commandline arguments, use that.
+  let packagePaths = process.argv.slice(2)
+    .map(p => resolve(process.cwd(), p));
+
+  // Otherwise, try to find a root package.json from cwd.
+  if(!packagePaths.length) {
+    packagePaths = [resolve(process.cwd(), 'package.json')];
+  }
+
+  const pkgs = [];
+  for (const p of packagePaths) {
+    pkgs.push(JSON.parse(await readFile(p)));
+  }
+
+  const results = [];
+  for (let i = 0; i < pkgs.length; i++) {
+    console.log('Collecting data for', packagePaths[i]);
+    const scoreMap = await getAllFromPackage(pkgs[i], axios, {verbose});
+    const r = userBusFactor(scoreMap, {minTotalRating});
+
+    const line = n => console.warn(
+      '-', `@${n},`, ...(
+        detailed ? [r[n]] :
+        ['in projects:', Object.keys(r[n].contributions)]
+      )
+    );
+
+    let hadHits = false;
+    for(const [title, rating] of ratings.entries()) {
+      if(rating < minTotalRating) continue;
+      const hits = Object.keys(r).filter(n => r[n].totalRating == rating);
+      if(hits.length) {
+        hadHits = true;
+        console.warn(`${title} impact contributors at risk from bus-factor found:`);
+        for(const n of hits) line(n);
+        console.warn();
+      }
+    }
+
+    if(hadHits) {
+      console.warn('We encourage you to make sure these contributors receive enough support.');
+    }
+  }
+})();
