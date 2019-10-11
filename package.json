@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/teamopen-dev/sourcecred-stack-lookup.git"
   },
-  "version": "0.1.0-alpha.12",
+  "version": "0.1.0",
   "license": "BlueOak-1.0.0",
   "main": "index.js",
   "files": [
