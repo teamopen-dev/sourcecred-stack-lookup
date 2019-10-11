@@ -1,6 +1,6 @@
 [![Build Status](https://drone.teamopen.dev/api/badges/teamopen-dev/sourcecred-stack-lookup/status.svg)](https://drone.teamopen.dev/teamopen-dev/sourcecred-stack-lookup)
 [![license BlueOak-1.0.0](https://badgen.net/badge/license/BlueOak-1.0.0)](LICENSE.md)
-[![npm version](https://badgen.net/npm/v/@teamopen/sourcecred-stack-lookup/alpha)](https://www.npmjs.com/package/@teamopen/sourcecred-stack-lookup)
+[![npm version](https://badgen.net/npm/v/@teamopen/sourcecred-stack-lookup)](https://www.npmjs.com/package/@teamopen/sourcecred-stack-lookup)
 
 # SourceCred stack lookup
 
@@ -10,7 +10,7 @@ Learn more about SourceCred: https://sourcecred.io/
 
 ### Example usage
 
-Install `npm i -D @teamopen/sourcecred-stack-lookup@alpha`.
+Install `npm i -D @teamopen/sourcecred-stack-lookup`.
 
 Add a script:
 
