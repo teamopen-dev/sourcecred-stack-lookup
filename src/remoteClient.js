@@ -2,11 +2,10 @@
 
 const delay = require('delay');
 const {Inflate} = require('pako/dist/pako_inflate.js');
+const {hexOf} = require('./util');
 
 const API_URL = 'https://scsl.teamopen.dev/v0/';
 const TIMEOUT = 10000;
-
-const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
 
 const axiosReq = axios => (...args) => {
 	return axios.apply(null, args).then(res => res.data);

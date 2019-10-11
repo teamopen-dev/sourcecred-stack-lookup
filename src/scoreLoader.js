@@ -6,10 +6,9 @@ const {readFileSync, writeFile} = require('fs').promises;
 const {join: pathJoin} = require('path');
 const delay = require('delay');
 const {gzip, Deflate} = require('pako');
+const {hexOf} = require('./util');
 
 const oneMinute = 60000;
-const hexOf = str => Buffer.from(str, 'utf8').toString('hex');
-
 const maxPerLoad = 10*oneMinute;
 
 exports.startLoadingScores = ({reloadSet, scoresDir, scDir, depMap, nodePath, cliPath, targetLoadTimeMins, meta, SOURCECRED_GITHUB_TOKEN}) => {
