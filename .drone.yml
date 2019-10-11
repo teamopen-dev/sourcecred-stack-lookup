@@ -21,19 +21,22 @@ steps:
       # Each mount path is stored individually, so you can split them later
       # without needing a separate cache_key for each of them.
       mount:
+        - './.sourcecred/cache'
         - './.sourcecred'
         - './.scores'
 
   - name: load-data
     image: sourcecred/sourcecred:dev
     environment:
-      TARGET_LOAD_TIME_MINS: 31
+      TARGET_LOAD_TIME_MINS: 15
       SOURCECRED_CLI: /code/bin/sourcecred.js
       SOURCECRED_GITHUB_TOKEN:
         from_secret: SOURCECRED_GITHUB_TOKEN
     commands:
       - npm i
+      - gzip -df .sourcecred/cache/*.db.gz
       - node src/cli.js examples/*.package.json
+      - gzip -f .sourcecred/cache/*.db
 
   - name: rebuild-cache
     image: meltwater/drone-cache:1
@@ -44,6 +47,7 @@ steps:
       rebuild: true
       cache_key: update-scores
       mount:
+        - './.sourcecred/cache'
         - './.sourcecred'
         - './.scores'
     when:
