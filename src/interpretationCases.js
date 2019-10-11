@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-const {sortObjByVal} = require('./util');
-const {accumulativeRelativeCred} = require('./scoreInterpretation');
+const {sortObjByVal} = require("./util");
+const {accumulativeRelativeCred} = require("./scoreInterpretation");
 const add = (a, b) => a + b;
 
 const CRITICAL = 4;
@@ -10,10 +10,7 @@ const MEDIUM = 2;
 const LOW = 1;
 
 // Impact ratings, based on absolute cred.
-const rate = (cred) =>
-  cred >= 1000 ? HIGH :
-  cred >= 300 ? MEDIUM :
-  LOW;
+const rate = (cred) => (cred >= 1000 ? HIGH : cred >= 300 ? MEDIUM : LOW);
 
 const offsetRating = (user, project) =>
   Math.min(user + Math.max(project - 1, 0), CRITICAL);
@@ -24,7 +21,7 @@ const accumulativeRelativeCredMap = (scoreMap, fraction) => {
   for (const [ref, scores] of scoreMap.entries()) {
     const users = scores[1].users;
     const selected = accumulativeRelativeCred(fraction, users);
-    const map = new Map(selected.map(u => [u.address[4], u.totalCred]));
+    const map = new Map(selected.map((u) => [u.address[4], u.totalCred]));
     results.set(ref, map);
   }
 
@@ -37,13 +34,13 @@ const userBusFactor = (scoreMap, opts) => {
     fraction: 0.6,
     userThreshold: 4,
     minTotalRating: LOW,
-    ...(opts || {})
+    ...(opts || {}),
   };
 
   // Find the projects meeting these criteria.
   const accum = accumulativeRelativeCredMap(scoreMap, fraction);
   for (const [ref, users] of accum.entries()) {
-    if(users.size > userThreshold) {
+    if (users.size > userThreshold) {
       accum.delete(ref);
     }
   }
@@ -68,34 +65,37 @@ const userBusFactor = (scoreMap, opts) => {
   const results = {};
   for (const name in scorePerUser) {
     const userRating = rate(scorePerUser[name]);
-    const relativeScore = Math.round(scorePerUser[name] / sumReliance * 1000) / 1000;
+    const relativeScore =
+      Math.round((scorePerUser[name] / sumReliance) * 1000) / 1000;
 
     let maxProjectRating = 0;
     const contributions = {};
     for (const [ref, users] of accum.entries()) {
-      if(!users.has(name)) continue;
+      if (!users.has(name)) continue;
       contributions[ref] = users.get(name);
-      maxProjectRating = Math.max(maxProjectRating, projectRatings.get(ref) || 0);
+      maxProjectRating = Math.max(
+        maxProjectRating,
+        projectRatings.get(ref) || 0
+      );
     }
 
     const totalRating = offsetRating(userRating, maxProjectRating);
 
-    if(totalRating >= minTotalRating){
+    if (totalRating >= minTotalRating) {
       results[name] = {
         score: scorePerUser[name],
         relativeScore,
         userRating,
         maxProjectRating,
         totalRating,
-        contributions: sortObjByVal(contributions)
-      }
+        contributions: sortObjByVal(contributions),
+      };
     }
-
   }
 
   return results;
 };
 
 module.exports = {
-  userBusFactor
+  userBusFactor,
 };
