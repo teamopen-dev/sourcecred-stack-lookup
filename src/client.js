@@ -40,7 +40,7 @@ const example = async (axios, opts) => {
 	// Take an example file.
 	const pkgData = require('../examples/6.package.json');
   const start = Date.now();
-	const scoreMap = await getAllFromPackage(pkgData, axios, {verbose});
+  const {scoreMap} = await getAllFromPackage(pkgData, axios, {verbose});
   const mid = Date.now();
   if(verbose) console.log('Getting packages', mid - start);
 

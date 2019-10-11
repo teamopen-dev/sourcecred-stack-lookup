@@ -37,8 +37,9 @@ const ratings = new Map([
   const results = [];
   for (let i = 0; i < pkgs.length; i++) {
     console.log('Collecting data for', packagePaths[i]);
-    const scoreMap = await getAllFromPackage(pkgs[i], axios, {verbose});
+    const {scoreMap, unknown, queued} = await getAllFromPackage(pkgs[i], axios, {verbose});
     const r = userBusFactor(scoreMap, {minTotalRating});
+    console.log(`Scanned ${scoreMap.size} projects`, `unknown: ${unknown}`, `queued: ${queued}`);
 
     const line = n => console.warn(
       '-', `@${n},`, ...(
