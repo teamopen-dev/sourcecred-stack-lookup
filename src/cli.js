@@ -29,8 +29,10 @@ const cliPath = process.env.SOURCECRED_CLI;
   // Switch from tmp dir to local data.
   const scDir = resolve(process.cwd(), ".sourcecred");
   const scoresDir = resolve(process.cwd(), ".scores");
+  const instanceDir = resolve(process.cwd(), ".instances");
   mkdirpSync(scDir);
   mkdirpSync(scoresDir);
+  mkdirpSync(instanceDir);
 
   // Get our metadata.
   const meta = await createMetaFileHandle(scoresDir, {verbose});
@@ -63,6 +65,7 @@ const cliPath = process.env.SOURCECRED_CLI;
     nodePath,
     cliPath,
     meta,
+    instanceDir,
     targetLoadTimeMins,
     SOURCECRED_GITHUB_TOKEN,
   });

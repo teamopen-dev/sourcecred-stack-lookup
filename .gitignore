@@ -1,5 +1,6 @@
 .secrets
 .scores
 .sourcecred
+.instances
 node_modules
 /index.js
