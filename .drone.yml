@@ -21,7 +21,6 @@ steps:
       # Each mount path is stored individually, so you can split them later
       # without needing a separate cache_key for each of them.
       mount:
-        # - './.sourcecred/cache'
         - './.sourcecred'
         - './.scores'
 
@@ -47,7 +46,6 @@ steps:
       rebuild: true
       cache_key: update-scores
       mount:
-        - './.sourcecred/cache'
         - './.sourcecred'
         - './.scores'
     when:
