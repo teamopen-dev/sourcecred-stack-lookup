@@ -34,7 +34,7 @@ steps:
         from_secret: SOURCECRED_GITHUB_TOKEN
     commands:
       - npm i
-      - gzip -df .sourcecred/cache/*.db.gz
+      - gzip -df .sourcecred/cache/*.db.gz || echo "Unpacking ignored"
       - node src/cli.js examples/*.package.json ./package.json
       - gzip -f .sourcecred/cache/*.db
 
