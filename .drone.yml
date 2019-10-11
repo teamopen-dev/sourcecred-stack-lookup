@@ -24,10 +24,21 @@ steps:
         - './.sourcecred'
         - './.scores'
 
+  - name: restore-cache-instances
+    image: meltwater/drone-cache:1
+    environment:
+      <<: *minio-cache-env
+      PLUGIN_ARCHIVE_FORMAT: tar
+    settings:
+      restore: true
+      cache_key: update-scores
+      mount:
+        - './.instances'
+
   - name: load-data
     image: sourcecred/sourcecred:dev
     environment:
-      TARGET_LOAD_TIME_MINS: 15
+      TARGET_LOAD_TIME_MINS: 5
       SOURCECRED_CLI: /code/bin/sourcecred.js
       SOURCECRED_GITHUB_TOKEN:
         from_secret: SOURCECRED_GITHUB_TOKEN
@@ -35,19 +46,30 @@ steps:
       - npm i
       - gzip -df .sourcecred/cache/*.db.gz || echo "Unpacking ignored"
       - node src/cli.js examples/*.package.json ./package.json
-      - gzip -f .sourcecred/cache/*.db
 
   - name: rebuild-cache
     image: meltwater/drone-cache:1
-    # This is called an alias (the *name), and references an anchor (the &name) for reusing it's values.
-    # It's part of the YAML specification.
     environment: *minio-cache-env
     settings:
       rebuild: true
       cache_key: update-scores
       mount:
-        - './.sourcecred'
         - './.scores'
+    when:
+      status:
+        - success
+        - failure
+
+  - name: rebuild-cache-instances
+    image: meltwater/drone-cache:1
+    environment:
+      <<: *minio-cache-env
+      PLUGIN_ARCHIVE_FORMAT: tar
+    settings:
+      rebuild: true
+      cache_key: update-scores
+      mount:
+        - './.instances'
     when:
       status:
         - success
