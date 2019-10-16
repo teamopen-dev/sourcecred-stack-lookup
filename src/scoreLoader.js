@@ -86,61 +86,15 @@ exports.startLoadingScores = ({
     const existingInstance = existsSync(instancePath);
     if (existingInstance) {
       await ungzip(instancePath);
-      return {existingInstance, dir: instancePath};
+      return {dir: instancePath};
     }
 
-    // Include cache mtime list.
-    try {
-      const mtime = await getMtimes(scDir);
-      return {
-        existingInstance,
-        targetDir: instancePath,
-        dir: scDir,
-        mtime,
-      };
-    } catch (e) {
-      console.warn(e);
-      return {
-        existingInstance,
-        dir: scDir,
-      };
-    }
+    mkdirpSync(instancePath);
+    return {dir: instancePath};
   };
 
   const closeInstance = async (instance) => {
-    let gzipDir = instance.existingInstance ? instance.dir : null;
-    if (!instance.existingInstance) {
-      // find modified cache to extract
-      if (!instance.mtime || instance.mtime.size == 0) {
-        console.warn("No original mtime");
-        return;
-      }
-
-      const mtime = await getMtimes(scDir);
-      const bumped = new Map();
-      for (const [f, newMtime] of mtime) {
-        const oldMtime = instance.mtime.get(f) || 0;
-        if (oldMtime < newMtime) {
-          bumped.set(f, newMtime - oldMtime);
-        }
-      }
-
-      if (bumped.size > 1) console.log(bumped);
-      if (bumped.size == 1) {
-        const f = bumped.keys().next().value;
-        const src = pathJoin(instance.dir, "cache", f);
-        const tgtCache = pathJoin(instance.targetDir, "cache");
-        const tgt = pathJoin(tgtCache, f);
-        mkdirpSync(tgtCache);
-        console.warn("Moving 1 modified cache entry to new instance");
-        await rename(src, tgt);
-        gzipDir = instance.targetDir;
-      }
-    }
-
-    if (gzipDir) {
-      await gzip(gzipDir);
-    }
+    await gzip(instance.dir);
   };
 
   const scoreNext = async (ref, instance) => {
