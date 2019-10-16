@@ -37,7 +37,7 @@ steps:
   - name: load-data
     image: sourcecred/sourcecred:dev
     environment:
-      TARGET_LOAD_TIME_MINS: 25
+      TARGET_LOAD_TIME_MINS: 5
       SOURCECRED_CLI: /code/bin/sourcecred.js
       SOURCECRED_GITHUB_TOKEN:
         from_secret: SOURCECRED_GITHUB_TOKEN
