@@ -8,6 +8,20 @@ Find out how your direct NPM dependencies are doing.
 
 Learn more about SourceCred: https://sourcecred.io/
 
+## Status: pauzed
+
+As an experiment this has been pretty interesting.
+You can read some more about my thoughts on it here:
+https://discourse.sourcecred.io/t/experiment-sourcecred-stack-lookup/287
+
+However since it's not in active use as far as I can tell, it's a
+little wasteful to keep running hourly cronjobs all the time.
+So I'm turning this cronjob off, leaving this repository for
+reference.
+
+If you're interested in SourceCred and/or this experiment,
+feel free to reach out here or on the SourceCred forums.
+
 ### Example usage
 
 Install `npm i -D @teamopen/sourcecred-stack-lookup`.
